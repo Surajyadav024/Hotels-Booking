@@ -59,7 +59,7 @@ export const login = async (req, res) => {
       process.env.SECRET_KEY,
       { expiresIn: "1h" }
     );
-    
+
     return res.status(200).json({ message: "Login successful", token });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -174,6 +174,7 @@ export const getAdminById = async (req, res) => {
 export const updateAdmin = async (req, res) => {
   try {
     const adminId = req.params.id;
+    const { FirstName, LastName, PhoneNo, Email } = req.body;
     if (!adminId) {
       return res.status(400).json({ message: "admin ID is required" });
     }
@@ -184,12 +185,36 @@ export const updateAdmin = async (req, res) => {
       return res.status(404).json({ message: "admin not found" });
     }
 
-    const updatedAdmin = await adminModel.findByIdAndUpdate(adminId, req.body, {
-      new: true,
-    });
-
+    const updatedAdmin = await adminModel.findByIdAndUpdate(
+      adminId,
+      {
+        FirstName,
+        LastName,
+        Email,
+        PhoneNo,
+      },
+      {
+        new: true,
+      }
+    );
     return res.status(200).json({ message: "Updated successfully" });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+export const getAllAdmins = async (req, res) => {
+  try {
+    const admins = await adminModel.find(
+      {},
+      "FirstName LastName Email PhoneNo"
+    );
+
+    if (!admins.length) {
+      return res.status(404).json({ message: "No admins found" });
+    }
+
+    return res.status(200).json(admins);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
