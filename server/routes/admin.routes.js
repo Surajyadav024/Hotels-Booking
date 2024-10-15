@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createAdmin,
+  deleteAdmin,
   getAdminById,
   getAllAdmins,
   login,
@@ -19,4 +20,5 @@ AdminRoute.post("/verifyotp", verifyOtp);
 AdminRoute.post("/newpassword", setnewPassword);
 AdminRoute.put("/updateadmin/:id", updateAdmin);
 AdminRoute.get("/getadminbyid/:id", getAdminById);
+AdminRoute.delete("/deleteadmin/:id", deleteAdmin);
 export default AdminRoute;

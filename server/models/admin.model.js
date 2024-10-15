@@ -11,6 +11,7 @@ const adminSchema = new mongoose.Schema(
     Email: {
       type: String,
       required: true,
+      unique:true,
       match: [
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
         "Please enter a valid email address",
@@ -19,7 +20,9 @@ const adminSchema = new mongoose.Schema(
     PhoneNo: {
       type: String,
       required: true,
+      unique: true,
       match: [/^\d{10}$/, "Please enter a valid 10-digit phone number"],
+      
     },
     Password: {
       type: String,

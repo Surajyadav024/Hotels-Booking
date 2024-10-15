@@ -15,6 +15,7 @@ const HotelSchema = new mongoose.Schema(
     contactNumber: {
       type: String,
       required: true,
+      unique:true,
       match: [/^[0-9]{10}$/, "Phone number must be 10 digits"],
     },
     email: {

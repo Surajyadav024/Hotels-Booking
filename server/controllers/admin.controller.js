@@ -218,3 +218,23 @@ export const getAllAdmins = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+export const deleteAdmin = async (req, res, next) => {
+  try {
+      const adminId = req.params.id
+
+      const admin = await adminModel.findById(adminId)
+
+      if (!admin) {
+          return res.status(400).json({ message: "admin not found" })
+      }
+
+      await adminModel.findByIdAndDelete(adminId)
+      return res.status(200).json({ message: "Deleted successfully" })
+  } catch (error) {
+      next(error);
+
+  }
+
+};
+
