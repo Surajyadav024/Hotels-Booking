@@ -4,6 +4,8 @@ import connectdb from "./connectdb.js";
 import AdminRoute from "./routes/admin.routes.js";
 import hotelRoutes from "./routes/hotels.route.js";
 import roomRoutes from "./routes/room.routes.js";
+import bookHotelRoutes from "./routes/bookHotel.routes.js";
+import agentRoutes from "./routes/agent.routes.js";
 
 const app = express();
 dotenv.config();
@@ -12,8 +14,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 //--------------------Routes------------------------------
 app.use("/Admin", AdminRoute);
+app.use("/Agent", agentRoutes);
 app.use("/Hotel", hotelRoutes);
 app.use("/Room", roomRoutes);
+app.use("/hotelBooking", bookHotelRoutes);
+
 //--------------------------------------------------------
 
 const startServer = async () => {
