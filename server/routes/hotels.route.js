@@ -4,6 +4,7 @@ import {
   deleteHotelById,
   getallHotels,
   getHotelById,
+  getHotelByLocation,
   updateHotel,
 } from "../controllers/hotel.controller.js";
 const hotelRoutes = express.Router();
@@ -13,5 +14,6 @@ hotelRoutes.get("/gethotelbyId/:id", getHotelById);
 hotelRoutes.get("/getallhotel", getallHotels);
 hotelRoutes.put("/updatehotel/:id", updateHotel);
 hotelRoutes.post("/deletehotel/:id", deleteHotelById);
+hotelRoutes.post("/getHotelByLocation", getHotelByLocation);
 
 export default hotelRoutes;

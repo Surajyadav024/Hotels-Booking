@@ -1,4 +1,5 @@
 import HotelModel from "../models/Hotels.model.js";
+import roomModel from "../models/room.model.js";
 export const createHotel = async (req, res) => {
   try {
     const {
@@ -126,5 +127,36 @@ export const deleteHotelById = async (req, res) => {
     return res.status(200).json({ message: "Hotel deleted successfully" });
   } catch (error) {
     return res.status(500).json({ message: "Error deleting hotel", error });
+  }
+};
+export const getHotelByLocation = async (req, res) => {
+  try {
+    const { location } = req.body;
+    if (!location) {
+      return res.status(400).json({ message: "Location is required" });
+    }
+    const hotels = await HotelModel.find({ location });
+    if (hotels.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No hotels found in this location" });
+    }
+    const hotelsWithAvailableRooms = [];
+    for (let hotel of hotels) {
+      const availableRooms = await roomModel.find({
+        hotel_id: hotel._id,
+        is_available: true,
+      });
+      if (availableRooms.length > 0) {
+        hotelsWithAvailableRooms.push({
+          hotels,
+          availableRooms,
+        });
+      }
+    }
+    return res.status(200).json({ hotelsWithAvailableRooms });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Failed to fetch hotels", error });
   }
 };
