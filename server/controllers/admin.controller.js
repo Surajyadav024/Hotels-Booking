@@ -3,6 +3,7 @@ import sendMail from "../middlewares/sendmail.js";
 import adminModel from "../models/admin.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import templateModel from "../models/template.model.js";
 
 export const createAdmin = async (req, res) => {
   try {
@@ -25,13 +26,10 @@ export const createAdmin = async (req, res) => {
       PhoneNo,
       Password: hashedpassword,
     });
-    const htmlcontent = `<html lang='en'><meta charset='UTF-8'><meta content='width=device-width,initial-scale=1' name='viewport'><meta content='IE=edge' http-equiv='X-UA-Compatible'><body style='font-family:Arial,sans-serif;background-color:#f4f4f4;margin:0;padding:0'><table style='max-width: 600px;margin: 20px auto;background-color:#fff;border: 1px solid #E1E1E1;padding: 20px;width: 100%'><tr><td><h1 style='color:#00f;text-align:center'>Welcome to Sleek It Technology!</h1><p style='font-size:16px;line-height:1.5;color:#555'>Hi {{username}},<p style='font-size:16px;line-height:1.5;color:#555'>We're thrilled to have you as part of our community. Your registration was successful, and you’re just one step away from unlocking all the great features we offer.<p style='text-align:center'><p style='font-size:16px;line-height:1.5;color:#555'>If you didn’t request this email, please ignore it.<p style='font-size:16px;line-height:1.5;color:#555'>Thanks for joining,<br>The Sleek It Technology Team<hr style='border: 0;border-top: 1px solid #E1E1E1'><p style='font-size:12px;color:#999;text-align:center'>Sleek It Technology Inc. | All rights reserved.<br>Need help? <a href='mailto:support@sleekit.com' style='color:#007bff;text-decoration:none'>Contact Support</a></table>`;
-    await sendMail(
-      Email,
-      "Admin account created successfully",
-      "",
-      htmlcontent.replace("{{username}}", FirstName)
-    );
+
+    const template = await templateModel.findOne({ name: "Registration" });
+    const emailContent = template.html.replace("[User's Name]", FirstName);
+    await sendMail(Email, template.subject, "", emailContent);
     res.status(201).json({ message: "Admin created successfully", admin });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -87,8 +85,13 @@ export const requestPasswordReset = async (req, res) => {
       },
       { new: true }
     );
-    const htmlcontent = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Forgot Password</title></head><body style='margin:0;padding:0;background-color:#f7f7f7;font-family:Arial,sans-serif'><div style='max-width:600px;margin:20px auto;background-color:#fff;border-radius:10px;box-shadow:0 2px 15px rgba(0,0,0,.1);overflow:hidden'><div style='padding:30px;text-align:center;background-color:#007bff;color:#fff'><h2 style='margin:0;font-size:24px'>Forgot Password</h2></div><div style='padding:20px;text-align:left'><p style='color:#555;font-size:16px'>Dear ${isuserExist.FirstName},</p><p style='color:#555;font-size:16px'>Your One-Time Password (OTP) for resetting your password is:</p><h3 style='color:#007bff;font-size:28px;font-weight:700;margin:20px 0;padding:10px;border:2px dashed #007BFF;display:inline-block'>${otp}</h3><p style='color:#555;font-size:16px'>Please enter this OTP.</p><p style='color:#555;font-size:16px'>This OTP is valid for the next <strong style='color:red'>5 minutes</strong>.</p><p style='color:#555;font-size:16px'>If you did not request this, please ignore this email.</p></div><div style='padding:20px;text-align:center;background-color:#f0f0f0;color:#777'><p style='margin:0;font-size:14px'>Thank you for using our service!</p><p style='margin:5px 0 0;font-size:12px'>If you have any questions, feel free to <a href='#' style='color:#007bff;text-decoration:none'>contact us</a>.</p></div></div></body></html>`;
-    await sendMail(Email, "Password Reset OTP", "", htmlcontent);
+    //const htmlcontent = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Forgot Password</title></head><body style='margin:0;padding:0;background-color:#f7f7f7;font-family:Arial,sans-serif'><div style='max-width:600px;margin:20px auto;background-color:#fff;border-radius:10px;box-shadow:0 2px 15px rgba(0,0,0,.1);overflow:hidden'><div style='padding:30px;text-align:center;background-color:#007bff;color:#fff'><h2 style='margin:0;font-size:24px'>Forgot Password</h2></div><div style='padding:20px;text-align:left'><p style='color:#555;font-size:16px'>Dear ${isuserExist.FirstName},</p><p style='color:#555;font-size:16px'>Your One-Time Password (OTP) for resetting your password is:</p><h3 style='color:#007bff;font-size:28px;font-weight:700;margin:20px 0;padding:10px;border:2px dashed #007BFF;display:inline-block'>${otp}</h3><p style='color:#555;font-size:16px'>Please enter this OTP.</p><p style='color:#555;font-size:16px'>This OTP is valid for the next <strong style='color:red'>5 minutes</strong>.</p><p style='color:#555;font-size:16px'>If you did not request this, please ignore this email.</p></div><div style='padding:20px;text-align:center;background-color:#f0f0f0;color:#777'><p style='margin:0;font-size:14px'>Thank you for using our service!</p><p style='margin:5px 0 0;font-size:12px'>If you have any questions, feel free to <a href='#' style='color:#007bff;text-decoration:none'>contact us</a>.</p></div></div></body></html>`;
+    const template = await templateModel.findOne({ name: "OTP Verification" });
+    const customizedHtml = template.html
+      .replace("[OTP]", otp)
+      .replace("[User's Name]", isuserExist.FirstName);
+
+    await sendMail(Email, template.subject, "", customizedHtml);
     return res
       .status(200)
       .json({ message: "OTP sent to your email successfully" });
@@ -221,20 +224,16 @@ export const getAllAdmins = async (req, res) => {
 
 export const deleteAdmin = async (req, res, next) => {
   try {
-      const adminId = req.params.id
+    const adminId = req.params.id;
 
-      const admin = await adminModel.findById(adminId)
+    const admin = await adminModel.findById(adminId);
 
-      if (!admin) {
-          return res.status(400).json({ message: "admin not found" })
-      }
-
-      await adminModel.findByIdAndDelete(adminId)
-      return res.status(200).json({ message: "Deleted successfully" })
+    if (!admin) {
+      return res.status(400).json({ message: "admin not found" });
+    }
+    await adminModel.findByIdAndDelete(adminId);
+    return res.status(200).json({ messasge: "Deleted successfully" });
   } catch (error) {
-      next(error);
-
+    next(error);
   }
-
 };
-

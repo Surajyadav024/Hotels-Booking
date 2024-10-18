@@ -6,6 +6,7 @@ import hotelRoutes from "./routes/hotels.route.js";
 import roomRoutes from "./routes/room.routes.js";
 import bookHotelRoutes from "./routes/bookHotel.routes.js";
 import agentRoutes from "./routes/agent.routes.js";
+import templateRoutes from "./routes/templates.routes.js";
 
 const app = express();
 dotenv.config();
@@ -18,6 +19,7 @@ app.use("/Agent", agentRoutes);
 app.use("/Hotel", hotelRoutes);
 app.use("/Room", roomRoutes);
 app.use("/hotelBooking", bookHotelRoutes);
+app.use("/template", templateRoutes);
 
 //--------------------------------------------------------
 
