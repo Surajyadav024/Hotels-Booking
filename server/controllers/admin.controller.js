@@ -27,7 +27,7 @@ export const createAdmin = async (req, res) => {
       Password: hashedpassword,
     });
 
-    const template = await templateModel.findOne({ name: "Registration" });
+    const template = await templateModel.findOne({ name: "REGISTRATION" });
     const emailContent = template.html.replace("[User's Name]", FirstName);
     await sendMail(Email, template.subject, "", emailContent);
     res.status(201).json({ message: "Admin created successfully", admin });
@@ -57,6 +57,9 @@ export const login = async (req, res) => {
       process.env.SECRET_KEY,
       { expiresIn: "1h" }
     );
+    const template = await templateModel.findOne({ name: "LOGIN" });
+    const emailContent = template.html.replace("[User's Name]", user.FirstName);
+    await sendMail(Email, template.subject, "", emailContent);
 
     return res.status(200).json({ message: "Login successful", token });
   } catch (error) {
@@ -85,13 +88,12 @@ export const requestPasswordReset = async (req, res) => {
       },
       { new: true }
     );
-    //const htmlcontent = `<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Forgot Password</title></head><body style='margin:0;padding:0;background-color:#f7f7f7;font-family:Arial,sans-serif'><div style='max-width:600px;margin:20px auto;background-color:#fff;border-radius:10px;box-shadow:0 2px 15px rgba(0,0,0,.1);overflow:hidden'><div style='padding:30px;text-align:center;background-color:#007bff;color:#fff'><h2 style='margin:0;font-size:24px'>Forgot Password</h2></div><div style='padding:20px;text-align:left'><p style='color:#555;font-size:16px'>Dear ${isuserExist.FirstName},</p><p style='color:#555;font-size:16px'>Your One-Time Password (OTP) for resetting your password is:</p><h3 style='color:#007bff;font-size:28px;font-weight:700;margin:20px 0;padding:10px;border:2px dashed #007BFF;display:inline-block'>${otp}</h3><p style='color:#555;font-size:16px'>Please enter this OTP.</p><p style='color:#555;font-size:16px'>This OTP is valid for the next <strong style='color:red'>5 minutes</strong>.</p><p style='color:#555;font-size:16px'>If you did not request this, please ignore this email.</p></div><div style='padding:20px;text-align:center;background-color:#f0f0f0;color:#777'><p style='margin:0;font-size:14px'>Thank you for using our service!</p><p style='margin:5px 0 0;font-size:12px'>If you have any questions, feel free to <a href='#' style='color:#007bff;text-decoration:none'>contact us</a>.</p></div></div></body></html>`;
-    const template = await templateModel.findOne({ name: "OTP Verification" });
-    const customizedHtml = template.html
-      .replace("[OTP]", otp)
-      .replace("[User's Name]", isuserExist.FirstName);
-
+    
+    const template = await templateModel.findOne({ name: "FORGET_PASSWORD" });
+    const customizedHtml = template.html.replace(`{{otp}}`, ` ${sendotp.otp}`)
+    .replace("[User's Name]", isuserExist.FirstName);;
     await sendMail(Email, template.subject, "", customizedHtml);
+
     return res
       .status(200)
       .json({ message: "OTP sent to your email successfully" });
@@ -143,9 +145,12 @@ export const setnewPassword = async (req, res) => {
     const hashedpassword = await bcrypt.hash(Password, 10);
     isExistuser.Password = hashedpassword;
     await isExistuser.save();
-    return res
-      .status(200)
-      .json({ message: "New password reset successfully! " });
+
+    const template = await templateModel.findOne({ name: "RESET_NEW_PASSWORD" });
+    const emailContent = template.html.replace("[User's Name]", user.FirstName);
+    await sendMail(Email, template.subject, "", emailContent);
+
+    return res.status(200).json({ message: "New password reset successfully! " });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
