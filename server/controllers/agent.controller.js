@@ -29,6 +29,10 @@ export const createagent = async (req, res) => {
       license,
       address,
     });
+     const template = await templateModel.findOne({ name: "REGISTRATION" });
+     const emailContent = template.html.replace("[User's Name]", FirstName);
+     await sendMail(Email, template.subject, "", emailContent);
+
     return res
       .status(201)
       .json({ message: "Agent created successfully", newAgent });
@@ -90,5 +94,140 @@ export const updateAgent = async (req, res) => {
       .json({ message: "Agent updated successfully", updateAgent });
   } catch (error) {
     return res.status(500).json({ message: "Error updating agent", error });
+  }
+};
+
+export const login = async (req, res) => {
+  try {
+    const { Email, Password } = req.body;
+    if (!Email || !Password) {
+      return res
+        .status(400)
+        .json({ message: "Please enter both email and password" });
+    }
+    const user = await AgentModel.findOne({ Email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+    const isMatch = await bcrypt.compare(Password, user.Password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+    const token = await jwt.sign(
+      { id: user._id, Email: user.Email },
+      process.env.SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+    const template = await templateModel.findOne({ name: "LOGIN" });
+    const emailContent = template.html.replace("[User's Name]", user.FirstName);
+    await sendMail(Email, template.subject, "", emailContent);
+
+    return res.status(200).json({ message: "Login successful", token });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const requestPasswordReset = async (req, res) => {
+  try {
+    const { Email } = req.body;
+    if (!Email) {
+      return res.status(400).json({ message: "Email id is required" });
+    }
+    const isuserExist = await adminModel.findOne({ Email });
+    if (!isuserExist) {
+      return res.status(400).json({ message: "Email does not exist" });
+    }
+    const otp = getRandomSixDigit();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
+    const sendotp = await adminModel.findByIdAndUpdate(
+      isuserExist._id,
+      {
+        otp,
+        otpExpiry,
+      },
+      { new: true }
+    );
+    
+    const template = await templateModel.findOne({ name: "FORGET_PASSWORD" });
+    const customizedHtml = template.html.replace(`{{otp}}`, ` ${sendotp.otp}`)
+    .replace("[User's Name]", isuserExist.FirstName);;
+    await sendMail(Email, template.subject, "", customizedHtml);
+
+    return res
+      .status(200)
+      .json({ message: "OTP sent to your email successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  try {
+    const { Email, otp } = req.body;
+    if (!Email || !otp) {
+      return res.status(400).json({ message: "Invalid Payload" });
+    }
+    const isExistuser = await adminModel.findOne({ Email });
+    if (!isExistuser) {
+      return res.status(400).json({ message: "Email does not exist" });
+    }
+    const currentTime = Date.now();
+    if (currentTime > isExistuser.otpExpiry) {
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+    if (otp !== isExistuser.otp) {
+      return res.status(400).json({ message: "OTP is Invalid" });
+    }
+    return res.status(200).json({ message: "Otp verified successfully" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+export const setnewPassword = async (req, res) => {
+  try {
+    const { Email, Password, ConfirmPassword } = req.body;
+    if (!Email || !Password || !ConfirmPassword) {
+      return res.status(400).json({ message: "Invalid Payload" });
+    }
+    const isExistuser = await adminModel.findOne({ Email });
+    if (!isExistuser) {
+      return res.status(400).json({ message: "Email does not exist" });
+    }
+    if (Password !== ConfirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "Password and Confirm Password does not match" });
+    }
+    const hashedpassword = await bcrypt.hash(Password, 10);
+    isExistuser.Password = hashedpassword;
+    await isExistuser.save();
+
+    const template = await templateModel.findOne({ name: "RESET_NEW_PASSWORD" });
+    const emailContent = template.html.replace("[User's Name]", user.FirstName);
+    await sendMail(Email, template.subject, "", emailContent);
+
+    return res.status(200).json({ message: "New password reset successfully! " });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+export const deleteAgent = async (req, res, next) => {
+  try {
+    const adminId = req.params.id;
+
+    const admin = await AgentModel.findById(adminId);
+
+    if (!admin) {
+      return res.status(400).json({ message: "admin not found" });
+    }
+    await adminModel.findByIdAndDelete(AgentId);
+    return res.status(200).json({ messasge: "Deleted successfully" });
+  } catch (error) {
+    next(error);
   }
 };
